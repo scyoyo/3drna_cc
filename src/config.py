@@ -8,6 +8,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 IN_COLAB = "COLAB_GPU" in os.environ or os.path.exists("/content")
 IN_KAGGLE = os.path.exists("/kaggle")
+GDRIVE_AVAILABLE = os.path.exists("/content/drive")  # Google Drive mounted
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -18,10 +19,19 @@ if IN_KAGGLE:
     MODEL_DIR = Path("/kaggle/input/protenix-rna-weights")
     DEPS_DIR = Path("/kaggle/input/protenix-rna-deps")
 elif IN_COLAB:
-    DATA_DIR = Path("/content/data/stanford-rna-3d-folding-2")
-    OUTPUT_DIR = Path("/content/output")
-    MODEL_DIR = Path("/content/models/protenix")
-    DEPS_DIR = Path("/content/deps")
+    # Prefer Google Drive for persistent storage if available
+    if GDRIVE_AVAILABLE:
+        GDRIVE_BASE = Path("/content/drive/MyDrive/3drna_cc")
+        DATA_DIR = GDRIVE_BASE / "data" / "stanford-rna-3d-folding-2"
+        OUTPUT_DIR = GDRIVE_BASE / "output"
+        MODEL_DIR = GDRIVE_BASE / "models" / "protenix"
+        DEPS_DIR = GDRIVE_BASE / "deps"
+    else:
+        # Fallback to Colab temp storage
+        DATA_DIR = Path("/content/data/stanford-rna-3d-folding-2")
+        OUTPUT_DIR = Path("/content/output")
+        MODEL_DIR = Path("/content/models/protenix")
+        DEPS_DIR = Path("/content/deps")
 else:
     _root = Path(__file__).resolve().parent.parent
     DATA_DIR = _root / "data"

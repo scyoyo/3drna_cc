@@ -42,10 +42,39 @@ if not os.path.exists('/root/.kaggle/kaggle.json'):
 !pip install -q -r requirements.txt
 ```
 
-### 2️⃣ Run Notebooks in Order
+### 2️⃣ Setup Option A: With Google Drive (Recommended)
+
+**Advantages**:
+- ✅ Data persists across Colab sessions
+- ✅ Share data between notebooks
+- ✅ kaggle.json stored once, reused forever
+- ✅ 50GB data stored in your Drive (not deleted after session)
+
+Run `00_colab_setup_with_gdrive.ipynb` first:
+```python
+# This notebook will:
+1. Mount Google Drive
+2. Create project directory structure
+3. Upload kaggle.json to Drive (one-time)
+4. Download competition data to /MyDrive/3drna_cc/data
+5. Verify all configurations
+```
+
+Then run other notebooks (they auto-detect Google Drive paths via `src/config.py`)
+
+### 2️⃣ Setup Option B: Colab Temporary Storage
+
+Run the standard setup cell from `01_setup_and_explore.ipynb`
+```python
+# Data stored in /content/ (deleted after session ends)
+# Suitable for quick experiments
+```
+
+### 3️⃣ Run Notebooks in Order
 
 | # | Notebook | Duration | Purpose |
 |---|----------|----------|---------|
+| 0 | `00_colab_setup_with_gdrive.ipynb` | 30 min | Setup Google Drive storage (optional but recommended) |
 | 1 | `01_setup_and_explore.ipynb` | 10 min | Download competition data, explore format |
 | 2 | `02_protenix_baseline.ipynb` | 2h | Run Protenix inference, establish TM baseline |
 | 3 | `03_finetune_protenix.ipynb` | 20-40h | LoRA fine-tune on training set |
@@ -280,8 +309,16 @@ All settings in `src/config.py`:
 
 ```python
 # Auto-detects environment
-IN_COLAB = ...  # Colab paths: /content/data, /content/output
-IN_KAGGLE = ... # Kaggle paths: /kaggle/input, /kaggle/working
+IN_COLAB = ...              # Colab paths
+GDRIVE_AVAILABLE = ...      # Google Drive mounted
+
+# Auto-detects storage location
+if GDRIVE_AVAILABLE:
+    DATA_DIR = /content/drive/MyDrive/3drna_cc/data
+    OUTPUT_DIR = /content/drive/MyDrive/3drna_cc/output
+else:
+    DATA_DIR = /content/data (Colab temp, deleted after session)
+    OUTPUT_DIR = /content/output
 
 # RNA geometry constants (Angstroms)
 C1_C1_ADJACENT_MIN = 5.0      # min consecutive C1' distance
@@ -293,6 +330,41 @@ DEFAULT_N_SEEDS = 5           # diffusion seeds per target
 LORA_RANK = 16                # low-rank adapter rank
 MAX_SEQ_CROP = 384            # max residues per crop
 ```
+
+### Google Drive Setup (Recommended)
+
+Run `00_colab_setup_with_gdrive.ipynb` to:
+1. Mount Google Drive
+2. Create `/MyDrive/3drna_cc/` directory structure
+3. Upload `kaggle.json` once (persists for all sessions)
+4. Download 50GB competition data to Drive
+
+**Directory structure**:
+```
+/MyDrive/3drna_cc/
+├── credentials/
+│   └── kaggle.json          # One-time upload
+├── data/
+│   └── stanford-rna-3d-folding-2/
+│       ├── train_sequences.csv
+│       ├── train_labels.csv
+│       ├── MSA/
+│       └── ...
+├── models/
+│   └── protenix/            # Pre-trained weights cached here
+└── output/                  # Inference outputs stored here
+```
+
+**Config auto-detection**:
+- If `/content/drive` exists (Google Drive mounted) → use Drive paths
+- Else → use Colab temp storage (`/content/`)
+- No code changes needed!
+
+**Speed notes**:
+- Drive I/O slower than Colab temp (~100 MB/s vs 1 GB/s)
+- Suitable for: storing data (write once), quick reads
+- Not suitable for: frequent streaming (training loops)
+- Workaround: Copy from Drive to `/tmp/` during training for speed
 
 ## 📦 Dependencies
 
