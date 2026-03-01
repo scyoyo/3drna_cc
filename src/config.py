@@ -4,10 +4,12 @@ import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Environment detection
+# Environment detection（用环境变量判 Kaggle，避免 Colab 下误判）
 # ---------------------------------------------------------------------------
-IN_COLAB = "COLAB_GPU" in os.environ or os.path.exists("/content")
-IN_KAGGLE = os.path.exists("/kaggle")
+IN_KAGGLE = "KAGGLE_KERNEL_RUN_TYPE" in os.environ
+IN_COLAB = (not IN_KAGGLE) and (
+    "COLAB_GPU" in os.environ or os.path.exists("/content")
+)
 GDRIVE_AVAILABLE = os.path.exists("/content/drive")  # Google Drive mounted
 
 # ---------------------------------------------------------------------------
